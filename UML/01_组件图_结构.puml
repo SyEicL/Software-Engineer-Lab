@@ -1,0 +1,65 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Microsoft YaHei
+skinparam dpi 180
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #326B70
+skinparam classBackgroundColor #EDF7F6
+title 01_组件图_结构
+package "浏览器界面" {
+[买家界面] as Buyer
+[卖家工作台] as Seller
+[管理员控制台] as Admin
+}
+package "模块化单体后端" {
+[统一鉴权与状态策略] as Auth
+[M1 账号与资料] as Account
+[M2 卖家资格与店铺] as Shop
+[M3 商品与检索] as Product
+[M4 收藏与购物车] as Cart
+[M5 预约与冲突控制] as Reserve
+[M6 订单与支付] as Order
+[M7 售后与结算] as Refund
+[M8 平台治理] as Govern
+[M9 统计汇总] as Stats
+[M10 审计与告警] as Audit
+}
+database "关系数据库\n业务表 / Outbox" as DB
+cloud "短信 / 支付适配器" as External
+Buyer --> Auth
+Seller --> Auth
+Admin --> Auth
+Auth --> Account
+Auth --> Shop
+Auth --> Product
+Auth --> Cart
+Auth --> Reserve
+Auth --> Order
+Auth --> Refund
+Auth --> Govern
+Auth --> Stats
+Auth --> Audit
+Shop --> Account
+Cart --> Product
+Reserve --> Product : 锁定单件商品
+Order --> Reserve : 校验已确认预约
+Order --> Product
+Refund --> Order
+Govern --> Account : 冻结
+Govern --> Product : 下架
+Govern --> Refund : 转交纠纷 / 暂缓结算
+Stats --> DB : 只读聚合
+Account --> External : 短信
+Order --> External : 支付
+Refund --> External : 退款
+Product --> DB
+Reserve --> DB
+Order --> DB
+Refund --> DB
+Account --> DB
+Shop --> DB
+Cart --> DB
+Govern --> DB
+Audit --> DB
+@enduml

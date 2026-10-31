@@ -1,0 +1,39 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Microsoft YaHei
+skinparam dpi 180
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #326B70
+skinparam classBackgroundColor #EDF7F6
+title 04_预约时序图_交互
+actor 买家 as B
+boundary 界面 as UI
+control 鉴权策略 as Auth
+control 预约服务 as R
+database 数据库 as DB
+B -> UI : 预约商品
+UI -> Auth : productId / requestKey / version
+Auth -> Auth : 验证登录、正常账号、非自购
+alt 权限不满足
+ Auth --> UI : 拒绝 + 原因；记录安全事件
+else 允许
+ Auth -> R : 创建预约
+ R -> DB : BEGIN；锁买卖双方账号（ID顺序），再锁商品
+ R -> DB : 查询同用户 requestKey
+ alt 已存在相同请求
+  DB --> R : 已有预约结果
+  R -> DB : COMMIT
+ else 新请求
+  R -> DB : 重验双方账号、商品版本、已发布及无占用
+  alt 状态冲突 / 商品被占用
+   R -> DB : ROLLBACK
+   R --> UI : 409 状态已变化，请刷新
+  else 校验通过
+   R -> DB : INSERT预约(待确认) + 商品占用(唯一productId)\n写Outbox通知 + 业务审计
+   R -> DB : COMMIT
+   R --> UI : 预约编号 / 待卖家确认
+  end
+ end
+end
+@enduml

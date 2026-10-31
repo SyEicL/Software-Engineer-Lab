@@ -1,0 +1,45 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Microsoft YaHei
+skinparam dpi 180
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #326B70
+skinparam classBackgroundColor #EDF7F6
+title 06_交易活动图_行为
+start
+:买家预约；服务端原子占用商品;
+if (卖家确认?) then (是)
+ :买家下单（同预约仅一单）;
+ if (支付成功且验签通过?) then (是)
+  :订单待发货;
+  if (卖家被冻结?) then (是)
+   :通知买家；暂缓结算;
+   if (买家选择退款?) then (是)
+    :管理员处理退款；失败则重试对账;
+    stop
+   else (等待)
+    :等待解冻后发货（时限待确认）;
+   endif
+  endif
+  :卖家发货;
+  if (发生售后?) then (是)
+   :创建售后单；冻结卖家纠纷转管理员;
+   if (审核通过?) then (是)
+    :按类型退货验收或直接退款;
+    :退款；成功后关闭订单;
+   else (否)
+    :记录原因；恢复原订单阶段或进入纠纷;
+   endif
+  else (否)
+   :买家确认收货、评价；预约完成;
+   :检查冻结及纠纷标志后结算;
+  endif
+ else (失败 / 未知)
+  :失败可重试；未知先查单，禁止重复扣款;
+ endif
+else (否 / 买家取消)
+ :预约取消或失效；原子释放占用;
+endif
+stop
+@enduml

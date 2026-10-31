@@ -1,0 +1,110 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Microsoft YaHei
+skinparam dpi 180
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #326B70
+skinparam classBackgroundColor #EDF7F6
+title 02_类图_结构
+hide circle
+class "用户" as User {
+ +id: UUID
+ +phone: String <<unique>>
+ +passwordHash: String
+ +nickname: String
+ +status: 正常/冻结/注销
+ +version: int
+}
+class "卖家资格" as Seller {
+ +id: UUID
+ +status: 待审/通过/驳回/撤销
+ +identityObjectKey: String
+ +review(reason)
+}
+class "店铺" as Shop {
+ +name: String
+ +description: String
+}
+class "商品" as Product {
+ +id: UUID
+ +title: String
+ +priceCent: long
+ +publishStatus: 发布状态
+ +version: int
+ +submitReview()
+ +takeDown(reason)
+}
+class "分类" as Category
+class "预约" as Reservation {
+ +id: UUID
+ +status: 待确认/已确认/取消/完成/失效
+ +requestKey: String
+ +confirm(expectedVersion)
+ +cancel(expectedVersion)
+}
+class "商品占用" as Hold {
+ +productId: UUID <<unique>>
+ +reservationId: UUID
+}
+class "订单" as Order {
+ +id: UUID
+ +status: 订单状态
+ +amountCent: long
+ +productSnapshot: JSON
+ +addressSnapshot: JSON
+ +version: int
+ +ship(trackingNo)
+ +confirmReceipt()
+}
+class "支付记录" as Payment {
+ +channelTxnId: String <<unique>>
+ +status: 处理中/成功/失败
+}
+class "售后单" as AfterSale {
+ +type: 退款/退货退款
+ +status: 申请/退货中/退款中/成功/驳回/纠纷
+ +resumeOrderStatus: String
+}
+class "退款记录" as Refund {
+ +requestKey: String <<unique>>
+ +status: 处理中/成功/失败
+}
+class "结算" as Settlement {
+ +status: 待结算/暂缓/已结算
+ +amountCent: long
+}
+class "收藏" as Favorite
+class "购物车项" as CartItem
+class "评价" as Review
+class "地址" as Address
+class "审计日志" as Audit {
+ +actorId: UUID
+ +action: String
+ +time: Instant
+ +ip: String
+}
+User "1" -- "0..*" Seller : 申请历史
+Seller "1" -- "0..1" Shop
+User "1" -- "0..*" Product : 发布
+Category "1" -- "0..*" Product
+User "1" -- "0..*" Reservation : 买家
+Product "1" -- "0..*" Reservation
+Product "1" -- "0..1" Hold
+Reservation "1" -- "0..1" Hold
+Reservation "1" -- "0..1" Order
+User "1" -- "0..*" Order : 买家
+User "1" -- "0..*" Order : 卖家
+Product "1" -- "0..*" Order : 历史尝试
+Order "1" -- "0..*" Payment
+Order "1" -- "0..*" AfterSale
+AfterSale "1" -- "0..*" Refund
+Order "1" -- "0..1" Settlement
+Order "1" -- "0..1" Review
+User "1" -- "0..*" Address
+User "1" -- "0..*" Favorite
+Favorite "0..*" -- "1" Product
+User "1" -- "0..*" CartItem
+CartItem "0..*" -- "1" Product
+User "1" -- "0..*" Audit
+@enduml
