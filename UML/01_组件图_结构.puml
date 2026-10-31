@@ -25,7 +25,7 @@ package "模块化单体后端" {
 [M9 统计汇总] as Stats
 [M10 审计与告警] as Audit
 }
-database "关系数据库\n业务表 / Outbox" as DB
+database "关系数据库\n业务数据" as DB
 cloud "短信 / 支付适配器" as External
 Buyer --> Auth
 Seller --> Auth
@@ -40,16 +40,16 @@ Auth --> Refund
 Auth --> Govern
 Auth --> Stats
 Auth --> Audit
-Shop --> Account
-Cart --> Product
-Reserve --> Product : 锁定单件商品
+Shop --> Account : 校验用户身份
+Cart --> Product : 查询商品信息
+Reserve --> Product : 校验并占用商品
 Order --> Reserve : 校验已确认预约
-Order --> Product
-Refund --> Order
-Govern --> Account : 冻结
+Order --> Product : 获取商品快照
+Refund --> Order : 校验订单状态
+Govern --> Account : 冻结 / 解冻
 Govern --> Product : 下架
 Govern --> Refund : 转交纠纷 / 暂缓结算
-Stats --> DB : 只读聚合
+Stats --> DB : 查询统计数据
 Account --> External : 短信
 Order --> External : 支付
 Refund --> External : 退款

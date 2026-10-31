@@ -7,31 +7,33 @@ skinparam backgroundColor #FFFFFF
 skinparam ArrowColor #326B70
 skinparam classBackgroundColor #EDF7F6
 title 04_预约时序图_交互
+hide footbox
 actor 买家 as B
 boundary 界面 as UI
 control 鉴权策略 as Auth
 control 预约服务 as R
 database 数据库 as DB
 B -> UI : 预约商品
-UI -> Auth : productId / requestKey / version
+UI -> Auth : 商品编号 / 请求标识 / 页面版本
 Auth -> Auth : 验证登录、正常账号、非自购
 alt 权限不满足
  Auth --> UI : 拒绝 + 原因；记录安全事件
 else 允许
  Auth -> R : 创建预约
- R -> DB : BEGIN；锁买卖双方账号（ID顺序），再锁商品
- R -> DB : 查询同用户 requestKey
+ R -> DB : 开启事务；按ID顺序锁双方账号，再锁商品
+ R -> DB : 查询当前买家的请求标识
  alt 已存在相同请求
   DB --> R : 已有预约结果
-  R -> DB : COMMIT
+  R -> DB : 提交事务
+  R --> UI : 返回已有预约结果
  else 新请求
-  R -> DB : 重验双方账号、商品版本、已发布及无占用
+  R -> DB : 重验双方账号状态、商品版本及可预约性
   alt 状态冲突 / 商品被占用
-   R -> DB : ROLLBACK
-   R --> UI : 409 状态已变化，请刷新
+   R -> DB : 回滚事务
+   R --> UI : 状态已变化，请刷新后重试
   else 校验通过
-   R -> DB : INSERT预约(待确认) + 商品占用(唯一productId)\n写Outbox通知 + 业务审计
-   R -> DB : COMMIT
+   R -> DB : 保存待确认预约及唯一商品占用\n记录通知事件与业务日志
+   R -> DB : 提交事务
    R --> UI : 预约编号 / 待卖家确认
   end
  end

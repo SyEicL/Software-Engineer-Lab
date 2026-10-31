@@ -18,7 +18,7 @@ class "用户" as User {
 }
 class "卖家资格" as Seller {
  +id: UUID
- +status: 待审/通过/驳回/撤销
+ +status: 待审核/通过/驳回/撤销
  +identityObjectKey: String
  +review(reason)
 }
@@ -30,15 +30,18 @@ class "商品" as Product {
  +id: UUID
  +title: String
  +priceCent: long
- +publishStatus: 发布状态
+ +publishStatus: 商品状态
  +version: int
  +submitReview()
  +takeDown(reason)
 }
-class "分类" as Category
+class "分类" as Category {
+ +id: UUID
+ +name: String
+}
 class "预约" as Reservation {
  +id: UUID
- +status: 待确认/已确认/取消/完成/失效
+ +status: 待确认/已确认/已取消/已完成/失效
  +requestKey: String
  +confirm(expectedVersion)
  +cancel(expectedVersion)
@@ -64,7 +67,6 @@ class "支付记录" as Payment {
 class "售后单" as AfterSale {
  +type: 退款/退货退款
  +status: 申请/退货中/退款中/成功/驳回/纠纷
- +resumeOrderStatus: String
 }
 class "退款记录" as Refund {
  +requestKey: String <<unique>>
@@ -87,18 +89,18 @@ class "审计日志" as Audit {
 User "1" -- "0..*" Seller : 申请历史
 Seller "1" -- "0..1" Shop
 User "1" -- "0..*" Product : 发布
-Category "1" -- "0..*" Product
+Category "1" -- "0..*" Product : 包含
 User "1" -- "0..*" Reservation : 买家
-Product "1" -- "0..*" Reservation
+Product "1" -- "0..*" Reservation : 预约记录
 Product "1" -- "0..1" Hold
 Reservation "1" -- "0..1" Hold
-Reservation "1" -- "0..1" Order
+Reservation "1" -- "0..1" Order : 生成
 User "1" -- "0..*" Order : 买家
 User "1" -- "0..*" Order : 卖家
 Product "1" -- "0..*" Order : 历史尝试
 Order "1" -- "0..*" Payment
 Order "1" -- "0..*" AfterSale
-AfterSale "1" -- "0..*" Refund
+AfterSale "1" -- "0..*" Refund : 退款尝试
 Order "1" -- "0..1" Settlement
 Order "1" -- "0..1" Review
 User "1" -- "0..*" Address
