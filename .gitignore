@@ -1,0 +1,6 @@
+/Code/bin/
+/Code/data/
+/Code/version-history.bundle
+/Code/**/__pycache__/
+/Code/**/build*/
+/Code/**/*.pyc
